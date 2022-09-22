@@ -1,4 +1,12 @@
 ; —-— macroses code —-—
+%macro is_negative 0
+
+mov edx, eax
+and edx, 0x80000000
+shr edx, 31
+
+%endmacro
+
 %macro push_regs 0 ; save регистров
 push eax
 push ebx
@@ -35,7 +43,7 @@ int 0x80
 pop_regs
 %endmacro
 
-%macro print_number 0 ; выввод на экран числа лежащего в eax
+%macro print_unsigned 0 ; выввод на экран числа лежащего в eax
 push_regs
 
 mov ecx, 10 ; Инициализация делителя
@@ -59,8 +67,12 @@ jg %%_print
 pop_regs
 %endmacro
 
-%macro print_neg_number 0 ; выввод на экран отрицательного числа лежащего в eax
+%macro print_signed 0 ; выввод на экран отрицательного числа лежащего в eax
 push_regs
+
+is_negative
+cmp edx, 0
+jz %%___print
 
 mov ebx, 0xFFFFFFFF
 sub ebx, eax
@@ -69,7 +81,8 @@ mov eax, ebx
 
 print minus, 1
 
-print_number
+%%___print:
+print_unsigned
 
 pop_regs
 %endmacro
@@ -88,12 +101,12 @@ mov ecx, dword(0)
 mov [res], dword(0)
 
 elem_subtraction:
-mov ax, x[ebx]
-mov dx, y[ebx]
+mov eax, x[ebx]
+mov edx, y[ebx]
 
-sub ax, dx
+sub eax, edx
 
-add [res], ax ; res += x[i] - y[i]
+add [res], eax ; res += x[i] - y[i]
 
 add bl, [size_elem] ; Сдвиг 'итератора'
 inc ecx
@@ -102,39 +115,37 @@ cmp ebx, len_x
 jne elem_subtraction ; while (i != x.size())
 
 mov eax, [res]
-print_number ; Выввод суммы поэлементной разницы массивов
+print_signed ; Выввод суммы поэлементной разницы массивов
 print newline, len3 ;
 
 ; —-— before this working code —-—
 
 print res_message, len2 ; Выввод сообщения об ответе
 
-mov edx, 0
 mov eax, [res]
-div ecx ; Вычисление среднего из суммы поэлементной разницы массивов
+is_negative
+cmp edx, 0
+jz metka_1
+mov edx, 0xFFFFFFFF
+jmp metka_2
+metka_1:
+mov edx, 0x00000000
+metka_2:
 
-mov ebx, eax
-and ebx, 0x80000000 ; Проверка числа на знак
-cmp ebx, 0
-jne printNegNum
+idiv ecx ; Вычисление среднего из суммы поэлементной разницы массивов
 
-print_number ; Выввод ответа
-jmp end
-
-printNegNum:
-print_neg_number
-
-end:
+print_signed ; Выввод ответа
 print newline, len3 ;
 
 mov eax, 1 ; возврат значения системе
+mov ebx, 0
 int 0x80
 
 section .data
-size_elem db 2 ; Размер одного элемента массива
-x dw 5, 1, 2, 1, 1, 1, 1
+size_elem db 4 ; Размер одного элемента массива
+x dd 5, 1, 2, 9, 5, 14
 len_x equ $ - x
-y dw 0, 1, 1, 5, 0, 4, 2
+y dd 5, 1, 2, 9, 5, 20
 len_y equ $ - y
 
 diff_sub_message db "AVG of substract = "
