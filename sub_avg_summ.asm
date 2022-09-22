@@ -143,9 +143,9 @@ int 0x80
 
 section .data
 size_elem db 4 ; Размер одного элемента массива
-x dd 5, 1, 2, 9, 5, 14
+x dd 5, 3, 2, 6, 1, 7, 4
 len_x equ $ - x
-y dd 5, 1, 2, 9, 5, 20
+y dd 0, 10, 1, 9, 2, 8, 5
 len_y equ $ - y
 
 diff_sub_message db "AVG of substract = "
